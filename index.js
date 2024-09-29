@@ -10,8 +10,11 @@ async function saveMessagesToDb(role, content) {
 }
 
 async function getChatHistoryFromDb() {
-  const result = await dbClient.query('SELECT role, content FROM chat_history ORDER BY id ASC');  
-  return result.rows.map(({ role, content }) => { role, content });
+  const result = await dbClient.query('SELECT role, content FROM chat_history ORDER BY id ASC');
+  if (result.rows.length === 0) {
+    return [];
+  }
+  return result.rows;
 }
 
 async function main() {
@@ -24,10 +27,7 @@ async function main() {
     const userInput = readlineSync.question(colors.bold.yellow('You: '));
 
     try {
-      const messages = chatHistory.map(([role, content]) => ({
-        role,
-        content,
-      }));
+      const messages = chatHistory
 
       messages.push({
         role: 'user',
