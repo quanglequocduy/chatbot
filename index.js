@@ -1,12 +1,24 @@
 import openai from './config/open-ai.js';
+import dbClient from './config/db.js';
+
 import colors from 'colors';
 import readlineSync from 'readline-sync';
+
+async function saveMessagesToDb(role, content) {
+  const query = `INSERT INTO chat_history (role, content) VALUES ($1, $2)`;
+  await dbClient.query(query, [role, content]);
+}
+
+async function getChatHistoryFromDb() {
+  const result = await dbClient.query('SELECT role, content FROM chat_history ORDER BY id ASC');  
+  return result.rows.map(({ role, content }) => { role, content });
+}
 
 async function main() {
   console.log(colors.bold.blue('Welcome to the Chatbot Program!'));
   console.log(colors.bold.blue('You can start chatting with the bot.'));
 
-  const chatHistory = [];
+  const chatHistory = await getChatHistoryFromDb();
 
   while(true) {
     const userInput = readlineSync.question(colors.bold.yellow('You: '));
@@ -36,8 +48,8 @@ async function main() {
 
       console.log(colors.bold.green(`Chatbot: ${completionText}`));
 
-      chatHistory.push(['user', userInput]);
-      chatHistory.push(['assistant', completionText]);
+      await saveMessagesToDb('user', userInput);
+      await saveMessagesToDb('assistant', completionText);
     } catch (error) {
       if (error.response) {
         console.error(colors.bold.red(error.response.error.code));
