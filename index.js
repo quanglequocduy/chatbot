@@ -1,16 +1,16 @@
 import openai from './config/open-ai.js';
-import dbClient from './config/db.js';
+import pool from './config/db.js';
 
 import colors from 'colors';
 import readlineSync from 'readline-sync';
 
 async function saveMessagesToDb(role, content) {
   const query = `INSERT INTO chat_history (role, content) VALUES ($1, $2)`;
-  await dbClient.query(query, [role, content]);
+  await pool.query(query, [role, content]);
 }
 
 async function getChatHistoryFromDb() {
-  const result = await dbClient.query('SELECT role, content FROM chat_history ORDER BY id ASC');
+  const result = await pool.query('SELECT role, content FROM chat_history ORDER BY id ASC');
   if (result.rows.length === 0) {
     return [];
   }
@@ -43,6 +43,7 @@ async function main() {
 
       if (userInput.toLowerCase() === 'exit') {
         console.log(colors.bold.green('Chatbot: Goodbye!'));
+        pool.end();
         break;
       }
 
