@@ -3,6 +3,8 @@ import pool from './config/db.js';
 
 import colors from 'colors';
 import readlineSync from 'readline-sync';
+import { Connection, WorkflowClient } from '@temporalio/client';
+import { exampleWorkflow } from './src/workflows/workflow.js';
 
 async function saveMessagesToDb(role, content) {
   const query = `INSERT INTO chat_history (role, content) VALUES ($1, $2)`;
@@ -22,6 +24,28 @@ async function main() {
   console.log(colors.bold.blue('You can start chatting with the bot.'));
 
   const chatHistory = await getChatHistoryFromDb();
+
+  // Connect to the Temporal server
+  const connection = await Connection.connect();
+
+  // Create client that talks to the Temporal
+  const client = new WorkflowClient({
+    connection,
+    namespace: 'default',
+  });
+
+  // Start a workflow
+  const handle = await client.start(exampleWorkflow, {
+    args: ['Quang Le'],
+    taskQueue: `example-task-queue`,
+    workflowId: 'example-workflow-id',
+  });
+
+  console.log(`Started workflow with workflowId=${handle.workflowId}`);
+
+  // Wait for the workflow to complete
+  const result = await handle.result();
+  console.log(`Workflow result: ${result}`);
 
   while(true) {
     const userInput = readlineSync.question(colors.bold.yellow('You: '));

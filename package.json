@@ -4,17 +4,24 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "start:worker": "node worker.js" 
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@temporalio/client": "^1.11.2",
+    "@temporalio/common": "^1.11.2",
+    "@temporalio/worker": "^1.11.2",
     "colors": "^1.4.0",
     "dotenv": "^16.4.5",
     "openai": "^4.65.0",
     "pg": "^8.13.0",
     "readline-sync": "^1.4.10"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.2"
   }
 }
