@@ -4,12 +4,10 @@ import pool from './config/db.js';
 import colors from 'colors';
 import readlineSync from 'readline-sync';
 import { Connection, WorkflowClient } from '@temporalio/client';
-import { exampleWorkflow } from './src/workflows/workflow.js';
-
-async function saveMessagesToDb(role, content) {
-  const query = `INSERT INTO chat_history (role, content) VALUES ($1, $2)`;
-  await pool.query(query, [role, content]);
-}
+import {
+  persistChatHistory,
+} from './src/workflows/workflow.js';
+import { WORKFLOW_TASK_QUEUE } from './src/constants.js';
 
 async function getChatHistoryFromDb() {
   const result = await pool.query('SELECT role, content FROM chat_history ORDER BY id ASC');
@@ -33,19 +31,6 @@ async function main() {
     connection,
     namespace: 'default',
   });
-
-  // Start a workflow
-  const handle = await client.start(exampleWorkflow, {
-    args: ['Quang Le'],
-    taskQueue: `example-task-queue`,
-    workflowId: 'example-workflow-id',
-  });
-
-  console.log(`Started workflow with workflowId=${handle.workflowId}`);
-
-  // Wait for the workflow to complete
-  const result = await handle.result();
-  console.log(`Workflow result: ${result}`);
 
   while(true) {
     const userInput = readlineSync.question(colors.bold.yellow('You: '));
@@ -73,8 +58,24 @@ async function main() {
 
       console.log(colors.bold.green(`Chatbot: ${completionText}`));
 
-      await saveMessagesToDb('user', userInput);
-      await saveMessagesToDb('assistant', completionText);
+      const params = [
+        {
+          role: 'user',
+          content: userInput,
+        },
+        {
+          role: 'assistant',
+          content: completionText,
+        },
+      ];
+      // Start a workflow
+      const handle = await client.start(persistChatHistory, {
+        args: [params],
+        taskQueue: WORKFLOW_TASK_QUEUE,
+        workflowId: `persist-chat-${Date.now()}`,
+      });
+
+      console.log(`Started workflow with workflowId=${handle.workflowId}`);
     } catch (error) {
       if (error.response) {
         console.error(colors.bold.red(error.response.error.code));
