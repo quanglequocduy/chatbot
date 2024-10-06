@@ -5,6 +5,8 @@ import { getYear } from 'date-fns';
 import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
 import { OpenAIEmbeddings } from '@langchain/openai';
 import { Chroma } from '@langchain/community/vectorstores/chroma';
+import { RunnableLambda } from "@langchain/core/runnables";
+import { queryAnalyzer } from './query-analyzer';
 
 const urls = [
   "https://www.youtube.com/watch?v=HAn9vnJy6S4",
@@ -62,7 +64,7 @@ async function getDocs() {
   return docs;
 }
 
-async function analyzeDoc(query: string) {
+async function similarSearch(query: string) {
   const docs = await getDocs();  
   const textSplitter = new RecursiveCharacterTextSplitter({ chunkSize: 2000 });
   const chunkedDocs = await textSplitter.splitDocuments(docs);
@@ -84,5 +86,47 @@ async function analyzeDoc(query: string) {
   }
 }
 
-analyzeDoc('videos on RAG published in 2023')
-.then((res) => console.log(`Result: ${JSON.stringify(res)}`));
+const retrieval = async (input: {
+  query: string;
+  publish_year?: number;
+}): Promise<DocumentInterface[]> => {
+  const docs = await getDocs();  
+  const textSplitter = new RecursiveCharacterTextSplitter({ chunkSize: 2000 });
+  const chunkedDocs = await textSplitter.splitDocuments(docs);
+
+  const embeddings = new OpenAIEmbeddings({
+    model: 'text-embedding-3-small',
+    openAIApiKey: process.env.OPENAI_API_KEY,
+  });
+
+  const vectorStore = await Chroma.fromDocuments(chunkedDocs, embeddings, {
+    ...chromaDbConfig,
+    collectionName: 'youtube-videos',
+  });
+
+
+  let _filter: Record<string, any> = {};
+  if (input.publish_year) {
+    _filter = { publish_year: input.publish_year };
+  }
+
+  const result = await vectorStore.similaritySearch(input.query, undefined, _filter);
+  return result;
+}
+
+async function analyzeDoc(query: string) {
+  const retrievalChain = queryAnalyzer.pipe(
+    new RunnableLambda({
+      func: async (input: any) => retrieval(input)
+    })
+  );
+  const results = await retrievalChain.invoke(query);
+  console.log(
+    results.map((doc) => ({
+      title: doc.metadata.title,
+      year: doc.metadata.publish_date,
+    }))
+  );
+}
+
+analyzeDoc('videos on RAG published in 2023');
