@@ -7,7 +7,9 @@
     "start": "node index.js",
     "start:worker": "node worker.js",
     "libs:prompts-and-llms": "node src/libs/prompts-and-llms.js",
-    "libs:different-models": "node src/libs/different-models.js"
+    "libs:different-models": "node src/libs/different-models.js",
+    "libs:prompt-template": "node src/libs/prompt-template.js"
+
   },
   "keywords": [],
   "author": "",
