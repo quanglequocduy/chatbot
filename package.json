@@ -6,13 +6,16 @@
   "scripts": {
     "start": "node index.js",
     "start:worker": "node worker.js",
-    "libs:prompts-and-llms": "node src/libs/prompts-and-llms.js"
+    "libs:prompts-and-llms": "node src/libs/prompts-and-llms.js",
+    "libs:different-models": "node src/libs/different-models.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@huggingface/inference": "^2.8.1",
+    "@langchain/community": "^0.3.5",
     "@langchain/core": "^0.3.10",
     "@langchain/openai": "^0.3.7",
     "@temporalio/client": "^1.11.2",
