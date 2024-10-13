@@ -5,13 +5,16 @@
   "type": "module",
   "scripts": {
     "start": "node index.js",
-    "start:worker": "node worker.js" 
+    "start:worker": "node worker.js",
+    "libs:prompts-and-llms": "node src/libs/prompts-and-llms.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@langchain/core": "^0.3.10",
+    "@langchain/openai": "^0.3.7",
     "@temporalio/client": "^1.11.2",
     "@temporalio/common": "^1.11.2",
     "@temporalio/worker": "^1.11.2",
